@@ -24,15 +24,10 @@ struct NextToGoView: View {
         case .somethingWentWrong:
           SomethingWentWrongView(retryAction: viewModel.loadRaces)
         case let .loaded(races):
-          ScrollView {
-            ForEach(races) { race in
-              RaceRow(
-                race: race,
-                pastOneMinuteAction: { viewModel.removeRace(race.raceID) }
-              )
-            }
-            .padding(.top, 10)
-          }
+          LoadedView(
+            races: races,
+            removeRaceAction: viewModel.removeRace(_:)
+          )
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -130,6 +125,23 @@ struct SomethingWentWrongView: View {
       description: { Text("Please try again") },
       actions: { Button("Retry") { retryAction() } }
     )
+  }
+}
+
+struct LoadedView: View {
+  let races: [RaceSummary]
+  let removeRaceAction: (String) -> Void
+
+  var body: some View {
+    ScrollView {
+      ForEach(races) { race in
+        RaceRow(
+          race: race,
+          pastOneMinuteAction: { removeRaceAction(race.raceID) }
+        )
+      }
+      .padding(.top, 10)
+    }
   }
 }
 
