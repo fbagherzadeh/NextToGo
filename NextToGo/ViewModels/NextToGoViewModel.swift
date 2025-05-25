@@ -9,7 +9,7 @@ import Foundation
 
 class NextToGoViewModel: ObservableObject {
   @Published var viewState: NextToGoViewState = .loading
-  @Published var selectedFilterType: FilterType = .all
+  @Published var selectedFilter: FilterType = .all
 
   private let racingService: RacingServiceProtocol
 
@@ -23,7 +23,7 @@ class NextToGoViewModel: ObservableObject {
     Task {
       do {
         let a = try await racingService.fetchRacing()
-        
+        viewState = a.data.nextToGoIDs.isEmpty ? .empty : .loaded
       } catch {
         viewState = .somethingWentWrong
       }

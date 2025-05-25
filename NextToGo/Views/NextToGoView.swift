@@ -9,52 +9,21 @@ import SwiftUI
 
 struct NextToGoView: View {
   @StateObject var viewModel: NextToGoViewModel = .init()
-  @Namespace private var animation
-  private let animationId: String = "ACTIVETAB"
 
   var body: some View {
     NavigationStack {
       VStack(spacing: .zero) {
-        /// Filter selection view
-        ScrollView(.horizontal) {
-          HStack(spacing: 10) {
-            ForEach(FilterType.allCases, id: \.self) { type in
-              Text(type.rawValue.capitalized)
-                .fontWeight(.semibold)
-                .foregroundStyle(viewModel.selectedFilterType == type ? .white : .gray)
-                .padding(.horizontal, 20)
-                .frame(height: 30)
-                .background {
-                  if viewModel.selectedFilterType == type {
-                    Capsule()
-                      .fill(.blue.gradient)
-                      .matchedGeometryEffect(id: animationId, in: animation)
-                  }
-                }
-                .contentShape(.rect)
-                .onTapGesture {
-                  withAnimation(.snappy) {
-                    viewModel.selectedFilterType = type
-                  }
-                }
-            }
-          }
-        }
-        .scrollIndicators(.hidden)
-        .scrollPosition(
-          id: .init(
-            get: { viewModel.selectedFilterType },
-            set: { _ in }
-          ),
-          anchor: .center
-        )
-        .padding(10)
-
+        FilterSelectionView($viewModel.selectedFilter)
         Divider()
 
-        switch viewModel.selectedFilterType {
-        case .all:
-          /// Content view
+        switch viewModel.viewState {
+        case .loading:
+          LoadingView()
+        case .empty:
+          NoContentView(filterName: viewModel.selectedFilter.rawValue.capitalized)
+        case .somethingWentWrong:
+          SomethingWentWrongView(retryAction: viewModel.loadRaces)
+        case .loaded:
           let races = [
             Race(meetingName: "Melbourne Cup", raceNumber: "1", advertisedStart: Date().addingTimeInterval(120)),
             Race(meetingName: "Sydney Derby", raceNumber: "2", advertisedStart: Date().addingTimeInterval(360)),
@@ -66,35 +35,7 @@ struct NextToGoView: View {
             }
             .padding(.top, 10)
           }
-
-        case .greyhound:
-          /// Loading view
-          VStack(spacing: 20) {
-            ProgressView()
-              .scaleEffect(1.5)
-
-            Text("Loading races...")
-              .font(.headline)
-              .foregroundStyle(.gray)
-          }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case .horse:
-          /// No content view
-          ContentUnavailableView(
-            "No results for \(viewModel.selectedFilterType.rawValue.capitalized)",
-            systemImage: "flag.pattern.checkered",
-            description: Text("Visit later or try other categories")
-          )
-        case .harness:
-          /// Sth went wrong view
-          ContentUnavailableView(
-            label: { Label("Something went wrong", systemImage: "x.circle") },
-            description: { Text("Please try again") },
-            actions: { Button("Retry") {  } }
-          )
         }
-
-
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .navigationTitle("Next to go")
@@ -102,6 +43,94 @@ struct NextToGoView: View {
         viewModel.loadRaces()
       }
     }
+  }
+}
+
+struct FilterSelectionView: View {
+  @Binding var selectedFilter: FilterType
+  @Namespace private var animation
+  private let animationId: String = "ACTIVETAB"
+
+  init(_ selectedFilter: Binding<FilterType>) {
+    self._selectedFilter = selectedFilter
+  }
+
+  var body: some View {
+    ScrollView(.horizontal) {
+      HStack(spacing: 10) {
+        ForEach(FilterType.allCases, id: \.self) { type in
+          Text(type.rawValue.capitalized)
+            .fontWeight(.semibold)
+            .foregroundStyle(selectedFilter == type ? .white : .gray)
+            .padding(.horizontal, 20)
+            .frame(height: 30)
+            .background {
+              if selectedFilter == type {
+                Capsule()
+                  .fill(.blue.gradient)
+                  .matchedGeometryEffect(id: animationId, in: animation)
+              }
+            }
+            .contentShape(.rect)
+            .onTapGesture {
+              withAnimation(.snappy) {
+                selectedFilter = type
+              }
+            }
+        }
+      }
+    }
+    .scrollIndicators(.hidden)
+    .scrollPosition(
+      id: .init(
+        get: { selectedFilter },
+        set: { _ in }
+      ),
+      anchor: .center
+    )
+    .padding(10)
+  }
+}
+
+struct LoadingView: View {
+  var body: some View {
+    VStack(spacing: 20) {
+      ProgressView()
+        .scaleEffect(1.5)
+
+      Text("Loading races...")
+        .font(.headline)
+        .foregroundStyle(.gray)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+}
+
+struct NoContentView: View {
+  let filterName: String
+
+  init(filterName: String) {
+    self.filterName = filterName
+  }
+
+  var body: some View {
+    ContentUnavailableView(
+      "No results for \(filterName)",
+      systemImage: "flag.pattern.checkered",
+      description: Text("Visit later or try other categories")
+    )
+  }
+}
+
+struct SomethingWentWrongView: View {
+  let retryAction: () -> Void
+
+  var body: some View {
+    ContentUnavailableView(
+      label: { Label("Something went wrong", systemImage: "x.circle") },
+      description: { Text("Please try again") },
+      actions: { Button("Retry") { retryAction() } }
+    )
   }
 }
 
