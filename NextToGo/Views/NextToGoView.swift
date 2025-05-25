@@ -23,15 +23,13 @@ struct NextToGoView: View {
           NoContentView(filterName: viewModel.selectedFilter.rawValue.capitalized)
         case .somethingWentWrong:
           SomethingWentWrongView(retryAction: viewModel.loadRaces)
-        case .loaded:
-          let races = [
-            Race(meetingName: "Melbourne Cup", raceNumber: "1", advertisedStart: Date().addingTimeInterval(120)),
-            Race(meetingName: "Sydney Derby", raceNumber: "2", advertisedStart: Date().addingTimeInterval(360)),
-            Race(meetingName: "Spring Carnival", raceNumber: "3", advertisedStart: Date().addingTimeInterval(600))
-          ]
+        case let .loaded(races):
           ScrollView {
             ForEach(races) { race in
-              RaceRow(race: race)
+              RaceRow(
+                race: race,
+                pastOneMinuteAction: { viewModel.removeRace(race.raceID) }
+              )
             }
             .padding(.top, 10)
           }
@@ -39,6 +37,7 @@ struct NextToGoView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .navigationTitle("Next to go")
+      .navigationBarTitleDisplayMode(.large)
       .onAppear {
         viewModel.loadRaces()
       }
@@ -140,16 +139,13 @@ struct SomethingWentWrongView: View {
 
 
 // MARK: - playground
-struct Race: Identifiable {
-  let id: String = UUID().uuidString
-  let meetingName: String
-  let raceNumber: String
-  let advertisedStart: Date
-}
-
 struct RaceRow: View {
-  let race: Race
-  @Environment(\.colorScheme) var colorScheme
+  let race: RaceSummary
+  let pastOneMinuteAction: () -> Void
+
+  @State private var remainingTime: String = ""
+  @Environment(\.colorScheme) private var colorScheme
+  private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
   var body: some View {
     HStack {
@@ -163,28 +159,52 @@ struct RaceRow: View {
 
       Spacer()
 
-      VStack {
-        Text("\(countdown(from: race.advertisedStart))")
-          .font(.headline)
-          .frame(alignment: .trailing)
-      }
+      Text(remainingTime)
+        .font(.headline)
+        .frame(alignment: .trailing)
+        .monospaced()
+        .contentTransition(.numericText())
     }
     .padding()
     .background(colorScheme == .light ? .white : .gray.opacity(0.3))
     .cornerRadius(8)
     .shadow(radius: 2)
     .padding(.horizontal)
+    .onAppear { updateRemainingTime() }
+    .onReceive(timer) { _ in
+      updateRemainingTime()
+    }
   }
 
-  // Countdown function to calculate the time remaining
-  private func countdown(from date: Date) -> String {
-    let remaining = date.timeIntervalSinceNow
-    guard remaining > 0 else {
-      return "Starting..."
-    }
+  // Calculate remaining time and update the state
+  private func updateRemainingTime() {
+    let now = Date.now
+    let timeInterval = race.raceStartDate.timeIntervalSince(now)
 
-    let minutes = Int(remaining) / 60
-    let seconds = Int(remaining) % 60
-    return String(format: "%02d:%02d", minutes, seconds) // Format as MM:SS
+    // Calculate 1 minute past advertised time
+    let oneMinutePastStart = race.raceStartDate.addingTimeInterval(60)
+    let timeIntervalWithGracePeriod = oneMinutePastStart.timeIntervalSince(now)
+
+    if timeIntervalWithGracePeriod > 0 {
+      // Showing positive countdown
+      let totalSeconds = Int(timeInterval)
+      let minutes = totalSeconds / 60
+      let seconds = totalSeconds % 60
+      withAnimation {
+        remainingTime = totalSeconds >= 60 ? "\(minutes) m" : "\(seconds) s"
+      }
+    } else {
+      // Showing negative countdown
+      let totalNegativeSeconds = Int(-timeIntervalWithGracePeriod)
+      let negativeMinutes = totalNegativeSeconds / 60
+      let negativeSeconds = totalNegativeSeconds % 60
+      if negativeMinutes >= 1 {
+        pastOneMinuteAction()
+      } else {
+        withAnimation {
+          remainingTime = "-\(negativeSeconds) s"
+        }
+      }
+    }
   }
 }

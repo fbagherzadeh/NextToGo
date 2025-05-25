@@ -24,7 +24,9 @@ struct RaceData: Codable {
   }
 }
 
-struct RaceSummary: Codable {
+struct RaceSummary: Codable, Identifiable {
+  var id: String { raceID }
+
   let raceID: String
   let raceName: String
   let raceNumber: Int
