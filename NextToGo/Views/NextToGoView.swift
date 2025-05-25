@@ -143,10 +143,9 @@ struct RaceRow: View {
   let race: RaceSummary
   let pastOneMinuteAction: () -> Void
 
-  @Environment(\.colorScheme) var colorScheme
-
   @State private var remainingTime: String = ""
-  @State private var timer: Timer? = nil
+  @Environment(\.colorScheme) private var colorScheme
+  private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
   var body: some View {
     HStack {
@@ -160,32 +159,20 @@ struct RaceRow: View {
 
       Spacer()
 
-      VStack {
-        Text(remainingTime)
-          .font(.headline)
-          .frame(alignment: .trailing)
-          .monospaced()
-          .contentTransition(.numericText())
-      }
+      Text(remainingTime)
+        .font(.headline)
+        .frame(alignment: .trailing)
+        .monospaced()
+        .contentTransition(.numericText())
     }
     .padding()
     .background(colorScheme == .light ? .white : .gray.opacity(0.3))
     .cornerRadius(8)
     .shadow(radius: 2)
     .padding(.horizontal)
-    .onAppear { startCountdown() }
-    .onDisappear { stopCountdown() }
-
-  }
-
-  private func startCountdown() {
-    updateRemainingTime()
-
-    // Create a timer that updates every second
-    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-      Task { @MainActor in
-        updateRemainingTime()
-      }
+    .onAppear { updateRemainingTime() }
+    .onReceive(timer) { _ in
+      updateRemainingTime()
     }
   }
 
@@ -209,8 +196,9 @@ struct RaceRow: View {
     } else {
       // Showing negative countdown
       let totalNegativeSeconds = Int(-timeIntervalWithGracePeriod)
+      let negativeMinutes = totalNegativeSeconds / 60
       let negativeSeconds = totalNegativeSeconds % 60
-      if negativeSeconds > 60 {
+      if negativeMinutes >= 1 {
         pastOneMinuteAction()
       } else {
         withAnimation {
@@ -218,10 +206,5 @@ struct RaceRow: View {
         }
       }
     }
-  }
-
-  private func stopCountdown() {
-    timer?.invalidate()
-    timer = nil
   }
 }
