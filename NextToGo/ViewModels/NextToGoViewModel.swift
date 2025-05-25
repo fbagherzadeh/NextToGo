@@ -35,7 +35,7 @@ class NextToGoViewModel: ObservableObject {
 
   func removeRace(_ raceID: String) {
     sortedRaceSummary.removeAll(where: { $0.raceID == raceID })
-    // TODO: check the number and load extra silently
+    // TODO: check the number and load extra silently - update below code to avoid "Thread 1: Fatal error: Array index is out of range"
     let first5 = Array(sortedRaceSummary.prefix(upTo: 5))
     viewState = .loaded(races: first5)
   }
