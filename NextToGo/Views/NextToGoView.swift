@@ -23,15 +23,13 @@ struct NextToGoView: View {
           NoContentView(filterName: viewModel.selectedFilter.rawValue.capitalized)
         case .somethingWentWrong:
           SomethingWentWrongView(retryAction: viewModel.loadRaces)
-        case .loaded:
-          let races = [
-            Race(meetingName: "Melbourne Cup", raceNumber: "1", advertisedStart: Date().addingTimeInterval(120)),
-            Race(meetingName: "Sydney Derby", raceNumber: "2", advertisedStart: Date().addingTimeInterval(360)),
-            Race(meetingName: "Spring Carnival", raceNumber: "3", advertisedStart: Date().addingTimeInterval(600))
-          ]
+        case let .loaded(races):
           ScrollView {
             ForEach(races) { race in
-              RaceRow(race: race)
+              RaceRow(
+                race: race,
+                pastOneMinuteAction: { viewModel.removeRace(race.raceID) }
+              )
             }
             .padding(.top, 10)
           }
@@ -39,6 +37,7 @@ struct NextToGoView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .navigationTitle("Next to go")
+      .navigationBarTitleDisplayMode(.large)
       .onAppear {
         viewModel.loadRaces()
       }
@@ -140,16 +139,14 @@ struct SomethingWentWrongView: View {
 
 
 // MARK: - playground
-struct Race: Identifiable {
-  let id: String = UUID().uuidString
-  let meetingName: String
-  let raceNumber: String
-  let advertisedStart: Date
-}
-
 struct RaceRow: View {
-  let race: Race
+  let race: RaceSummary
+  let pastOneMinuteAction: () -> Void
+
   @Environment(\.colorScheme) var colorScheme
+
+  @State private var remainingTime: String = ""
+  @State private var timer: Timer? = nil
 
   var body: some View {
     HStack {
@@ -164,9 +161,11 @@ struct RaceRow: View {
       Spacer()
 
       VStack {
-        Text("\(countdown(from: race.advertisedStart))")
+        Text(remainingTime)
           .font(.headline)
           .frame(alignment: .trailing)
+          .monospaced()
+          .contentTransition(.numericText())
       }
     }
     .padding()
@@ -174,17 +173,55 @@ struct RaceRow: View {
     .cornerRadius(8)
     .shadow(radius: 2)
     .padding(.horizontal)
+    .onAppear { startCountdown() }
+    .onDisappear { stopCountdown() }
+
   }
 
-  // Countdown function to calculate the time remaining
-  private func countdown(from date: Date) -> String {
-    let remaining = date.timeIntervalSinceNow
-    guard remaining > 0 else {
-      return "Starting..."
-    }
+  private func startCountdown() {
+    updateRemainingTime()
 
-    let minutes = Int(remaining) / 60
-    let seconds = Int(remaining) % 60
-    return String(format: "%02d:%02d", minutes, seconds) // Format as MM:SS
+    // Create a timer that updates every second
+    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+      Task { @MainActor in
+        updateRemainingTime()
+      }
+    }
+  }
+
+  // Calculate remaining time and update the state
+  private func updateRemainingTime() {
+    let now = Date.now
+    let timeInterval = race.raceStartDate.timeIntervalSince(now)
+
+    // Calculate 1 minute past advertised time
+    let oneMinutePastStart = race.raceStartDate.addingTimeInterval(60)
+    let timeIntervalWithGracePeriod = oneMinutePastStart.timeIntervalSince(now)
+
+    if timeIntervalWithGracePeriod > 0 {
+      // Showing positive countdown
+      let totalSeconds = Int(timeInterval)
+      let minutes = totalSeconds / 60
+      let seconds = totalSeconds % 60
+      withAnimation {
+        remainingTime = totalSeconds >= 60 ? "\(minutes) m" : "\(seconds) s"
+      }
+    } else {
+      // Showing negative countdown
+      let totalNegativeSeconds = Int(-timeIntervalWithGracePeriod)
+      let negativeSeconds = totalNegativeSeconds % 60
+      if negativeSeconds > 60 {
+        pastOneMinuteAction()
+      } else {
+        withAnimation {
+          remainingTime = "-\(negativeSeconds) s"
+        }
+      }
+    }
+  }
+
+  private func stopCountdown() {
+    timer?.invalidate()
+    timer = nil
   }
 }
