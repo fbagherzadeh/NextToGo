@@ -84,4 +84,23 @@ struct RaceSummary: Codable, Identifiable {
     var advertisedStartContainer = container.nestedContainer(keyedBy: AdvertisedStartCodingKeys.self, forKey: .advertisedStart)
     try advertisedStartContainer.encode(seconds, forKey: .seconds)
   }
+
+  /// Used for testing purposes
+  init(
+    raceID: String,
+    raceName: String,
+    raceNumber: Int,
+    meetingID: String,
+    meetingName: String,
+    categoryID: String,
+    raceStartDate: Date
+  ) {
+    self.raceID = raceID
+    self.raceName = raceName
+    self.raceNumber = raceNumber
+    self.meetingID = meetingID
+    self.meetingName = meetingName
+    self.categoryID = categoryID
+    self.raceStartDate = raceStartDate
+  }
 }

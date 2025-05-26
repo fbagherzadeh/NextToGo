@@ -9,10 +9,11 @@ import Foundation
 
 class RaceRowViewModel: ObservableObject {
   @Published var remainingTime: String = ""
-  var isRunningOutOfTime: Bool = false
 
+  var isRunningOutOfTime: Bool = false
   let race: RaceSummary
-  let pastOneMinuteAction: () -> Void
+
+  private let pastOneMinuteAction: () -> Void
 
   init(
     race: RaceSummary,
