@@ -8,12 +8,18 @@
 import SwiftUI
 
 struct FilterSelectionView: View {
-  @Binding var selectedFilter: FilterType
+  let selectedFilter: FilterType
+  let onChangeFilter: (FilterType) -> Void
+
   @Namespace private var animation
   private let animationId: String = "ACTIVETAB"
 
-  init(_ selectedFilter: Binding<FilterType>) {
-    self._selectedFilter = selectedFilter
+  init(
+    selectedFilter: FilterType,
+    onChangeFilter: @escaping (FilterType) -> Void
+  ) {
+    self.selectedFilter = selectedFilter
+    self.onChangeFilter = onChangeFilter
   }
 
   var body: some View {
@@ -35,7 +41,7 @@ struct FilterSelectionView: View {
             .contentShape(.rect)
             .onTapGesture {
               withAnimation(.snappy) {
-                selectedFilter = type
+                onChangeFilter(type)
               }
             }
         }

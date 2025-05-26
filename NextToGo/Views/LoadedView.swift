@@ -29,7 +29,6 @@ struct RaceRow: View {
   let pastOneMinuteAction: () -> Void
 
   @State private var remainingTime: String = ""
-  @State private var pastSeconds: Int = 0 // This can be normal var in the VM
   @Environment(\.colorScheme) private var colorScheme
   private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -65,10 +64,10 @@ struct RaceRow: View {
   // Calculate remaining time and update the state
   private func updateRemainingTime() {
     let timeInterval = race.raceStartDate.timeIntervalSince(Date.now)
+    let totalSeconds = Int(timeInterval)
 
-    if timeInterval > 0 {
+    if totalSeconds > 0 {
       // Showing positive countdown
-      let totalSeconds = Int(timeInterval)
       let minutes = totalSeconds / 60
       let seconds = totalSeconds % 60
       withAnimation {
@@ -76,12 +75,11 @@ struct RaceRow: View {
       }
     } else {
       // Showing negative countdown
-      pastSeconds += 1
-      if pastSeconds > 59 {
+      if totalSeconds < -59 {
         pastOneMinuteAction()
       } else {
         withAnimation {
-          remainingTime = "-\(pastSeconds) s"
+          remainingTime = "\(totalSeconds) s"
         }
       }
     }

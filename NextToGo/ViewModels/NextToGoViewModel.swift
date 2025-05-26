@@ -9,7 +9,7 @@ import Foundation
 
 class NextToGoViewModel: ObservableObject {
   @Published var viewState: NextToGoViewState = .loading
-  @Published var selectedFilter: FilterType = .all
+  private(set) var selectedFilter: FilterType = .all
 
   private var sortedRaceSummary: [RaceSummary] = []
   private let racingService: RacingServiceProtocol
@@ -23,10 +23,8 @@ class NextToGoViewModel: ObservableObject {
     viewState = .loading
     Task {
       do {
-        let races = try await racingService.fetchRacing()
-        sortedRaceSummary = races.data.raceSummaries.values.sorted(by: { $0.raceStartDate < $1.raceStartDate })
-        let first5 = sortedRaceSummary.count > 5 ? Array(sortedRaceSummary.prefix(upTo: 5)) : sortedRaceSummary
-        viewState = first5.isEmpty ? .empty : .loaded(races: first5)
+        sortedRaceSummary = try await fetchAndSortRaceSummary()
+        updateLoadedState()
       } catch {
         viewState = .somethingWentWrong
       }
@@ -35,9 +33,22 @@ class NextToGoViewModel: ObservableObject {
 
   func removeRace(_ raceID: String) {
     sortedRaceSummary.removeAll(where: { $0.raceID == raceID })
-    // TODO: check the number and load extra silently - update below code to avoid "Thread 1: Fatal error: Array index is out of range"
-    let first5 = sortedRaceSummary.count > 5 ? Array(sortedRaceSummary.prefix(upTo: 5)) : sortedRaceSummary
+    // TODO: check the number and load extra silently
+    updateLoadedState(with: selectedFilter)
+  }
+
+  func updateLoadedState(with filter: FilterType = .all) {
+    selectedFilter = filter
+    var first5 = sortedRaceSummary.count > 5 ? Array(sortedRaceSummary.prefix(upTo: 5)) : sortedRaceSummary
+    if let catId = filter.categoryId {
+      first5 = first5.filter({ $0.categoryID == catId })
+    }
     viewState = first5.isEmpty ? .empty : .loaded(races: first5)
+  }
+
+  private func fetchAndSortRaceSummary() async throws -> [RaceSummary] {
+    let races = try await racingService.fetchRacing()
+    return races.data.raceSummaries.values.sorted(by: { $0.raceStartDate < $1.raceStartDate })
   }
 }
 
@@ -53,4 +64,13 @@ enum FilterType: String, CaseIterable {
   case greyhound
   case horse
   case harness
+
+  var categoryId: String? {
+    switch self {
+    case .all: nil
+    case .greyhound: "9daef0d7-bf3c-4f50-921d-8e818c60fe61"
+    case .horse: "4a2788f8-e825-4d36-9894-efd4baf1cfae"
+    case .harness: "161d9be2-e909-4326-8c2c-35ed71fb460b"
+    }
+  }
 }

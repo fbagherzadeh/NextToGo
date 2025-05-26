@@ -13,7 +13,11 @@ struct NextToGoView: View {
   var body: some View {
     NavigationStack {
       VStack(spacing: .zero) {
-        FilterSelectionView($viewModel.selectedFilter)
+        FilterSelectionView(
+          selectedFilter: viewModel.selectedFilter,
+          onChangeFilter: { viewModel.updateLoadedState(with: $0) }
+        )
+
         Divider()
 
         switch viewModel.viewState {
