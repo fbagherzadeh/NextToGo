@@ -61,17 +61,17 @@ struct RaceRow: View {
     }
   }
 
-  // Calculate remaining time and update the state
+  /// Calculate remaining time and update the state
   private func updateRemainingTime() {
-    let timeInterval = race.raceStartDate.timeIntervalSince(Date.now)
-    let totalSeconds = Int(timeInterval)
+    let timeInterval = race.raceStartDate.timeIntervalSinceNow
+    let totalSeconds = Int(timeInterval.rounded(.down))
 
     if totalSeconds > 0 {
       // Showing positive countdown
       let minutes = totalSeconds / 60
       let seconds = totalSeconds % 60
       withAnimation {
-        remainingTime = totalSeconds >= 60 ? "\(minutes) m" : "\(seconds) s"
+        remainingTime = totalSeconds >= 60 ? "\(minutes)m \(seconds)s" : "\(seconds)s"
       }
     } else {
       // Showing negative countdown
@@ -79,7 +79,7 @@ struct RaceRow: View {
         pastOneMinuteAction()
       } else {
         withAnimation {
-          remainingTime = "\(totalSeconds) s"
+          remainingTime = "\(totalSeconds)s"
         }
       }
     }
