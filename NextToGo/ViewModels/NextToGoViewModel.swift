@@ -25,8 +25,8 @@ class NextToGoViewModel: ObservableObject {
       do {
         let races = try await racingService.fetchRacing()
         sortedRaceSummary = races.data.raceSummaries.values.sorted(by: { $0.raceStartDate < $1.raceStartDate })
-        let first5 = Array(sortedRaceSummary.prefix(upTo: 5))
-        viewState = races.data.nextToGoIDs.isEmpty ? .empty : .loaded(races: first5)
+        let first5 = sortedRaceSummary.count > 5 ? Array(sortedRaceSummary.prefix(upTo: 5)) : sortedRaceSummary
+        viewState = first5.isEmpty ? .empty : .loaded(races: first5)
       } catch {
         viewState = .somethingWentWrong
       }
@@ -36,8 +36,8 @@ class NextToGoViewModel: ObservableObject {
   func removeRace(_ raceID: String) {
     sortedRaceSummary.removeAll(where: { $0.raceID == raceID })
     // TODO: check the number and load extra silently - update below code to avoid "Thread 1: Fatal error: Array index is out of range"
-    let first5 = Array(sortedRaceSummary.prefix(upTo: 5))
-    viewState = .loaded(races: first5)
+    let first5 = sortedRaceSummary.count > 5 ? Array(sortedRaceSummary.prefix(upTo: 5)) : sortedRaceSummary
+    viewState = first5.isEmpty ? .empty : .loaded(races: first5)
   }
 }
 
