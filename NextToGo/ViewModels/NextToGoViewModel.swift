@@ -31,9 +31,14 @@ class NextToGoViewModel: ObservableObject {
     }
   }
 
+  @MainActor
   func removeRace(_ raceID: String) {
     sortedRaceSummary.removeAll(where: { $0.raceID == raceID })
-    // TODO: check the number and load extra silently
+    if sortedRaceSummary.count < 7 {
+      Task {
+        sortedRaceSummary = (try? await fetchAndSortRaceSummary()) ?? []
+      }
+    }
     updateLoadedState(with: selectedFilter)
   }
 
