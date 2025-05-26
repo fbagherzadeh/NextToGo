@@ -34,6 +34,12 @@ struct RaceRow: View {
 
   var body: some View {
     HStack {
+      if let imageName = race.imageName {
+        Image(imageName)
+          .resizable()
+          .frame(width: 40, height: 40)
+      }
+
       VStack(alignment: .leading, spacing: 5) {
         Text(race.meetingName)
           .font(.headline)
@@ -82,6 +88,17 @@ struct RaceRow: View {
           remainingTime = "\(totalSeconds)s"
         }
       }
+    }
+  }
+}
+
+extension RaceSummary {
+  var imageName: String? {
+    switch categoryID {
+    case FilterType.greyhound.categoryId: FilterType.greyhound.rawValue
+    case FilterType.horse.categoryId: FilterType.horse.rawValue
+    case FilterType.harness.categoryId: FilterType.harness.rawValue
+    default: nil
     }
   }
 }
