@@ -30,7 +30,7 @@ struct NextToGoView: View {
         case let .loaded(races):
           LoadedView(
             races: races,
-            removeRaceAction: viewModel.removeRace(_:)
+            removeRaceAction: { viewModel.removeRace($0) }
           )
         }
       }

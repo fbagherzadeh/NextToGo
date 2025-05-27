@@ -6,11 +6,13 @@
 //
 
 import Testing
+import Combine
 @testable import NextToGo
 
 @MainActor
-struct NextToGoViewModelTests {
+class NextToGoViewModelTests {
   let mockRacingService: MockRacingService = .init()
+  var cancellable: [AnyCancellable] = []
 
   @Test func initialisation() async throws {
     let viewModel = NextToGoViewModel(racingService: mockRacingService)
@@ -28,10 +30,21 @@ struct NextToGoViewModelTests {
     }
   }
 
-  /// Not a clean/easy way to check `viewState = .loading`
   @Test func loadRaces_withError() async throws {
     let viewModel = NextToGoViewModel(racingService: MockRacingService(shouldThrows: true))
-    await viewModel.loadRaces()
+    await confirmation { confirmation in
+      viewModel.$viewState
+        .dropFirst()
+        .sink { state in
+          if state == .loading {
+            confirmation()
+          }
+        }
+        .store(in: &cancellable)
+
+      await viewModel.loadRaces()
+    }
+
     #expect(viewModel.viewState == .somethingWentWrong)
   }
 }
@@ -48,47 +61,5 @@ extension NextToGoViewState: @retroactive Equatable {
     default:
       false
     }
-  }
-}
-
-func withThrowingTimeout<T>(
-  seconds: Duration,
-  operation: @escaping () async throws -> T
-) async throws -> T {
-  try await withThrowingTaskGroup(of: T.self) { group in
-    group.addTask {
-      try await operation()
-    }
-
-    group.addTask {
-      try await Task.sleep(for: seconds)
-      throw CancellationError()
-    }
-
-    let result = try await group.next()!
-    group.cancelAll()
-    return result
-  }
-}
-
-func withTimeLimit(
-  _ timeLimit: Duration,
-  _ body: @escaping @Sendable () async throws -> Void,
-  timeoutHandler: @escaping @Sendable () -> Void
-) async throws {
-  try await withThrowingTaskGroup(of: Void.self) { group in
-    group.addTask {
-      // If sleep() returns instead of throwing a CancellationError, that means
-      // the timeout was reached before this task could be cancelled, so call
-      // the timeout handler.
-      try await SuspendingClock().sleep(for: timeLimit)
-      timeoutHandler()
-    }
-    group.addTask(operation: body)
-
-    defer {
-      group.cancelAll()
-    }
-    try await group.next()!
   }
 }
