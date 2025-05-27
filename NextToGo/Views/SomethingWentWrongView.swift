@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct SomethingWentWrongView: View {
-  let retryAction: () -> Void
+  let retryAction: @MainActor @Sendable () async -> Void
 
   var body: some View {
     ContentUnavailableView(
       label: { Label("Something went wrong", systemImage: "x.circle") },
       description: { Text("Please try again") },
-      actions: { Button("Retry") { retryAction() } }
+      actions: { Button("Retry") { Task { await retryAction() } } }
     )
   }
 }

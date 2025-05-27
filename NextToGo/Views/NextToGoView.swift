@@ -37,8 +37,8 @@ struct NextToGoView: View {
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .navigationTitle("Next to go")
       .navigationBarTitleDisplayMode(.large)
-      .onAppear {
-        viewModel.loadRaces()
+      .task {
+        await viewModel.loadRaces()
       }
     }
   }

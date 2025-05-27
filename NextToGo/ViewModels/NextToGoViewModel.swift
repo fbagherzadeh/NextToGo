@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class NextToGoViewModel: ObservableObject {
   @Published var viewState: NextToGoViewState = .loading
   private(set) var selectedFilter: FilterType = .all
@@ -18,28 +19,27 @@ class NextToGoViewModel: ObservableObject {
     self.racingService = racingService
   }
 
-  @MainActor
-  func loadRaces() {
+  func loadRaces() async {
     viewState = .loading
-    Task {
-      do {
-        sortedRaceSummary = try await fetchAndSortRaceSummary()
-        updateLoadedState()
-      } catch {
-        viewState = .somethingWentWrong
-      }
+    do {
+      sortedRaceSummary = try await fetchAndSortRaceSummary()
+      updateLoadedState()
+    } catch {
+      viewState = .somethingWentWrong
     }
   }
 
-  @MainActor
-  func removeRace(_ raceID: String) {
+  @discardableResult
+  func removeRace(_ raceID: String) -> Task<Void, Never>? {
+    var fetchMoreTask: Task<Void, Never>?
     sortedRaceSummary.removeAll(where: { $0.raceID == raceID })
     if sortedRaceSummary.count < 7 {
-      Task {
+      fetchMoreTask = Task {
         sortedRaceSummary = (try? await fetchAndSortRaceSummary()) ?? []
       }
     }
     updateLoadedState(with: selectedFilter)
+    return fetchMoreTask
   }
 
   func updateLoadedState(with filter: FilterType = .all) {
