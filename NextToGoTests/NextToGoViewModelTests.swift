@@ -20,17 +20,20 @@ class NextToGoViewModelTests {
     #expect(viewModel.selectedFilter == .all)
   }
 
-  @Test func loadRaces_withSuccess() async throws {
+  @Test("Testing loadRaces with success scenario")
+  func loadRaces_withSuccess() async throws {
     let viewModel = NextToGoViewModel(racingService: mockRacingService)
     await viewModel.loadRaces()
     if case let .loaded(races) = viewModel.viewState {
       #expect(races.count == 5)
+      #expect(races.map { $0.raceID } == ["raceID4", "raceID7", "raceID10", "raceID8", "raceID6"])
     } else {
       Issue.record("viewState must be loaded")
     }
   }
 
-  @Test func loadRaces_withError() async throws {
+  @Test("Testing both loadRaces with error scenario and when called, viewState must emit loading first")
+  func loadRaces_withError() async throws {
     let viewModel = NextToGoViewModel(racingService: MockRacingService(shouldThrows: true))
     await confirmation { confirmation in
       viewModel.$viewState

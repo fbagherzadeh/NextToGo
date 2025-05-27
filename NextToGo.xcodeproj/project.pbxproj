@@ -21,16 +21,6 @@
 		0AAB026F2DE1544F00F8531A /* NextToGoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NextToGoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		0AAB02DF2DE54F1A00F8531A /* Exceptions for "NextToGoTests" folder in "Compile Sources" phase from "NextToGoTests" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 0AAB026B2DE1544F00F8531A /* Sources */;
-			membershipExceptions = (
-				Helpers/RaceAPIResponse.json,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0AAB02642DE1544D00F8531A /* NextToGo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -39,9 +29,6 @@
 		};
 		0AAB02722DE1544F00F8531A /* NextToGoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0AAB02DF2DE54F1A00F8531A /* Exceptions for "NextToGoTests" folder in "Compile Sources" phase from "NextToGoTests" target */,
-			);
 			path = NextToGoTests;
 			sourceTree = "<group>";
 		};

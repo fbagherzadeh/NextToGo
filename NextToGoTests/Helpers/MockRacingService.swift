@@ -8,8 +8,6 @@
 import Foundation
 @testable import NextToGo
 
-private class BundleLocator {}
-
 actor MockRacingService: RacingServiceProtocol {
   var didInvokeFetchRacing: Bool = false
   let shouldThrows: Bool
@@ -18,18 +16,13 @@ actor MockRacingService: RacingServiceProtocol {
     self.shouldThrows = shouldThrows
   }
 
-  func fetchRacing() async throws -> RaceAPIResponse {
+  func fetchRacing() async throws -> [RaceSummary] {
     didInvokeFetchRacing = true
 
     if shouldThrows {
       throw NetworkError.invalidURL
     }
 
-    let url = Bundle(for: BundleLocator.self).url(
-      forResource: "RaceAPIResponse",
-      withExtension: "json"
-    )!
-    let data = try Data(contentsOf: url)
-    return try JSONDecoder().decode(RaceAPIResponse.self, from: data)
+    return RaceSummary.Fixture.unsortedRaceSummaries
   }
 }

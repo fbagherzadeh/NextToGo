@@ -8,7 +8,7 @@
 import Foundation
 
 protocol RacingServiceProtocol: Sendable {
-  func fetchRacing() async throws -> RaceAPIResponse
+  func fetchRacing() async throws -> [RaceSummary]
 }
 
 struct RacingService: RacingServiceProtocol {
@@ -18,7 +18,7 @@ struct RacingService: RacingServiceProtocol {
     self.httpClient = httpClient
   }
 
-  func fetchRacing() async throws -> RaceAPIResponse {
+  func fetchRacing() async throws -> [RaceSummary] {
     guard let url = URL(string: "https://api.neds.com.au/rest/v1/racing/") else {
       throw NetworkError.invalidURL
     }
@@ -33,6 +33,7 @@ struct RacingService: RacingServiceProtocol {
       modelType: RaceAPIResponse.self
     )
 
-    return try await httpClient.load(resource)
+    let raceSummaries = try await httpClient.load(resource).data.raceSummaries
+    return Array(raceSummaries.values)
   }
 }

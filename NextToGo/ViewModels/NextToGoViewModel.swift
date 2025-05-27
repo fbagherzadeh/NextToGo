@@ -52,8 +52,8 @@ class NextToGoViewModel: ObservableObject {
   }
 
   private func fetchAndSortRaceSummary() async throws -> [RaceSummary] {
-    let races = try await racingService.fetchRacing()
-    return races.data.raceSummaries.values.sorted(by: { $0.raceStartDate < $1.raceStartDate })
+    try await racingService.fetchRacing()
+      .sorted(by: { $0.raceStartDate < $1.raceStartDate })
   }
 }
 
