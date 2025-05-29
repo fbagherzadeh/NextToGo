@@ -11,9 +11,18 @@ import Foundation
 actor MockRacingService: RacingServiceProtocol {
   var didInvokeFetchRacing: Bool = false
   let shouldThrows: Bool
+  let raceSummaries: [RaceSummary]
 
-  init(shouldThrows: Bool = false) {
+  init(
+    shouldThrows: Bool = false,
+    raceSummaries: [RaceSummary] = RaceSummary.Fixture.unsortedRaceSummaries
+  ) {
     self.shouldThrows = shouldThrows
+    self.raceSummaries = raceSummaries
+  }
+
+  func resetFetchRacingInvocation() {
+    didInvokeFetchRacing = false
   }
 
   func fetchRacing() async throws -> [RaceSummary] {
@@ -23,6 +32,6 @@ actor MockRacingService: RacingServiceProtocol {
       throw NetworkError.invalidURL
     }
 
-    return RaceSummary.Fixture.unsortedRaceSummaries
+    return raceSummaries
   }
 }
